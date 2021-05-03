@@ -53,8 +53,18 @@ else:
   data = subprocess.check_output("lctl get_param debug %s |  sed -e 's/fff[0-9a-f]*/*/'" % " ".join(params), 
 	shell = True, encoding='UTF-8')
   if len(data) == 0:
-    print("Cannot invoke lctl, aborting!")
-    sys.exit(1)
+    print("Cannot invoke lctl, trying to use other tools in line")
+
+  data2 = subprocess.check_output("lfs mdts", shell = True, encoding='UTF-8')
+  if len(data2) == 0:
+    print("Cannot invoke lfs mdts, trying to use other tools in line")
+  data = data + "\n" + data2
+
+  data2 = subprocess.check_output("lfs osts", shell = True, encoding='UTF-8')
+  if len(data2) == 0:
+    print("Cannot invoke lfs osts, trying to use other tools in line")
+  data = data + "\n" + data2
+
   if options.filename:
     print("Saving to file %s" % options.filename)
     file = open(options.filename, 'w')
