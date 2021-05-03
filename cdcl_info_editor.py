@@ -31,11 +31,13 @@ def parse_full_val(val, schema_data):
       if val_unit == unit:
         return [ number, val_unit ]
     return None
-
+  if isinstance(tmp, list):
+    tmp = tmp[0]
+  
   if schema_data["dtype"] == "number":
-    return float(tmp[0])
+    return float(tmp)
   elif schema_data["dtype"] == "integer":
-    return int(tmp[0])
+    return int(tmp)
   else:
     return val
 
