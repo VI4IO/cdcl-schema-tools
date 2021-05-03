@@ -40,7 +40,17 @@ if options.loadFromFile:
   data = open(options.filename, "r")
 else:
   # try to fetch the data and store it
-  data = subprocess.check_output("lctl get_param debug ldlm.namespaces.*.{lru_size,lru_max_age}     llite.*.{max_cached_mb,max_read_ahead_mb,max_read_ahead_per_file_mb}     {mdc,osc}.*.{max_rpcs_in_flight,checksums,max_dirty_mb,max_pages_per_rpc} |  sed -e 's/MDT[0-9a-f]*/MDT*/' -e 's/OST[0-9a-f]*/OST*/' -e 's/fff[0-9a-f]*/*/' | sort -u", 
+  params = [
+  "ldlm.namespaces.*.{lru_size,lru_max_age}",
+  "llite.*.{max_cached_mb,max_read_ahead_mb,max_read_ahead_per_file_mb}",
+  "{mdc,osc}.*.{max_rpcs_in_flight,checksums,max_dirty_mb,max_pages_per_rpc}",
+  "llite.*.{lmv,lov}.activeobd",         # number of MDTs/OSTs in filesystem
+  "llite.*.{files,kbytes}{free,total}",  # all free and total files and inodes
+  "mdc.*.{files,kbytes}{free,total}",    # per-MDT free and total files/inodes
+  "osc.*.{files,kbytes}{free,total}",    # per-OST free and total files/inodes
+  "{mdc,osc}.*.import"]                  # lots of info about server config
+  
+  data = subprocess.check_output("lctl get_param debug %s |  sed -e 's/fff[0-9a-f]*/*/'" % " ".join(params), 
 	shell = True, encoding='UTF-8')
   if len(data) == 0:
     print("Cannot invoke lctl, aborting!")
