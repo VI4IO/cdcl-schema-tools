@@ -3,6 +3,7 @@ import sys
 import json
 import re
 import os
+import subprocess
 
 # This tool allows to view and edit the options in an existing schema file.
 # In order to get started download the two files:
@@ -10,6 +11,17 @@ import os
 # wget https://www.vi4io.org/lib/plugins/newcdcl/scripts/site-io500.json
 #
 # You can then copy the site-io500.json template file and modify it using this tool
+
+def invoke_prog(name, prog):
+  try:
+    data = subprocess.check_output(prog, shell = True, encoding='UTF-8')
+    if len(data) == 0:
+      print("Program returned zero output %s" % prog)
+      return ""
+  except subprocess.CalledProcessError:
+    print("Cannot inoke program %s" % prog)
+    return ""
+  return name + "\n" + data
 
 def parse_full_val(val, schema_data):
   global units

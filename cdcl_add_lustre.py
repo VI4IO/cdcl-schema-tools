@@ -11,7 +11,7 @@ import traceback
 import subprocess
 from optparse import OptionParser
 
-from cdcl_info_editor import edit_infos, execute_download
+from cdcl_info_editor import edit_infos, execute_download, invoke_prog
 
 def parseOBDS(data, state):
   options.lustreFS = state["oss_fs"]
@@ -105,22 +105,16 @@ else:
   "osc.*.{files,kbytes}{free,total}",    # per-OST free and total files/inodes
   "{mdc,osc}.*.import"]                  # lots of info about server config
   
-  data = subprocess.check_output("lctl get_param debug %s |  sed -e 's/fff[0-9a-f]*/*/'" % " ".join(params), 
-	shell = True, encoding='UTF-8')
-  if len(data) == 0:
-    print("Cannot invoke lctl, trying to use other tools in line")
-
-  data2 = subprocess.check_output("lfs mdts", shell = True, encoding='UTF-8')
-  if len(data2) == 0:
-    print("Cannot invoke lfs mdts, trying to use other tools in line")
-  data = data + "\n" + data2
-
-  data2 = subprocess.check_output("lfs osts", shell = True, encoding='UTF-8')
-  if len(data2) == 0:
-    print("Cannot invoke lfs osts, trying to use other tools in line")
-  data = data + "\n" + data2
+  data = invoke_prog("LCTL", "lctl get_param debug %s |  sed -e 's/fff[0-9a-f]*/*/'" % " ".join(params))
+  data = data + "\n" + invoke_prog("LFS MDTS", "lfs mdts")
+  data = data + "\n" + invoke_prog("LFS OSTS", "lfs osts")
+  data = data + "\n" + invoke_prog("LFS DF", "lfs df -v")
 
   if options.filename:
+    data = data.strip()
+    if len(data) == 0:
+      print("Ignoring empty output, nothing to save")
+      sys.exit(1)
     print("Saving to file %s" % options.filename)
     file = open(options.filename, 'w')
     file.write(data + "\n")
