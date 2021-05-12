@@ -8,7 +8,7 @@ import os
 import re
 import traceback
 import subprocess
-from cdcl_info_editor import edit_infos, execute_download
+from cdcl_info_editor import edit_infos, execute_download, warn
 
 if len(sys.argv) < 2:
   print("Synopsis: %s <SYSTEM-JSON> [<SupercomputerTypeNumber>] [<NodeTypeNumber>]" % sys.argv[0])
@@ -30,6 +30,9 @@ def info_(cmd, key, val, unit = ""):
 
 def info(key, val, unit = ""):
   global cmd
+  if val == None:
+    warn("Couldn't find any information for key %s" % key)
+    return
   info_(cmd, key, val, unit)
 
 def infoNoReplace(key, val, unit = ""):

@@ -23,12 +23,16 @@ def invoke_prog(name, prog):
     return ""
   return name + "\n" + data
 
+def warn(str):
+  print("WARNING: %s " % str)
+
 def parse_full_val(val, schema_data):
   global units
   tmp = val
   if "unit" in schema_data and schema_data["unit"] != "":
     tmp = val.split(" ")
     if schema_data["dtype"] == "number":
+      print(tmp)
       number = float(tmp[0])
     elif schema_data["dtype"] == "integer":
       number = int(tmp[0])
