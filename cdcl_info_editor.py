@@ -91,7 +91,7 @@ def processDict(data, token, path, val, replace, usePrefix):
     else:
       print("%s = undefined" % path)
   else:
-    processSingle(data["childs"], token, path, val, replace)
+    processSingle(data["childs"], token, path, val, replace, usePrefix)
 
 def processSingle(data, token, path, val, replace, usePrefix):
   cur = token.pop(0)
