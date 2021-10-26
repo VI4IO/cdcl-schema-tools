@@ -67,6 +67,8 @@ def processDict(data, token, path, val, replace, usePrefix):
     was = ""
     old = ""
     cval = None
+    if not "att" in data:
+      data["att"] = {}
     if cur in data["att"]:
       cval = data["att"][cur]
       if isinstance(cval, list):
