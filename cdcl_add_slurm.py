@@ -31,8 +31,10 @@ def info(nodeNumber, key, val, unit = ""):
   infoS("Nodes[%s]." % (nodeNumber) + key, val)
 
 try:
-  #data = subprocess.check_output("LANG=C sinfo -o \"%P %.6D %f %z\"", shell=True, universal_newlines=True).strip()
-  data = open("sinfo.txt").read()
+  if os.path.isfile("sinfo.txt"):
+    data = open("sinfo.txt").read()
+  else:    
+    data = subprocess.check_output("LANG=C sinfo -o \"%P %.6D %f %z\"", shell=True, universal_newlines=True).strip()
   nodeNumber = 0
   totalNodes = 0
   for line in data.split("\n"):
