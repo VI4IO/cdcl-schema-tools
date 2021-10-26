@@ -104,13 +104,21 @@ if "VERSION_ID" in kv:
   info("distribution version", kv["VERSION_ID"])
 
 # Try to find country code using a reverse address
-
 if not os.path.exists("ip.html"):
   execute_download("https://pbxbook.com/other/where_ip.html", "ip.html")
   with open("ip.html") as f:
     m = re.search("public IP:.*Country:</b> .* / (.*) /", f.read())
     if m:
       info("nationality", m.group(1))
+
+# Try to add memory
+with open("/proc/meminfo") as f:
+  for line in f:
+    arr = line.split(":")
+    if len(arr) == 2:
+      kv[arr[0].strip()] = arr[1].strip(" \n\t\"")
+  if "MemTotal" in kv:
+    info("Memory.net capacity", kv["MemTotal"].replace("kB", "KiB"))
 
 edit_infos(json, cmd)
 edit_infos(json, cmd_noReplace, False)

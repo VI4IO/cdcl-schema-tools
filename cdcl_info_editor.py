@@ -86,8 +86,8 @@ def processDict(data, token, path, val, replace, usePrefix):
       if replace or cur not in data["att"]:
         data["att"][cur] = nval
         cval = nval
-    if usePrefix:
-      path = usePrefix
+    #if usePrefix:
+    #  path = edit_infos + "-" + path
     if cur in data["att"]:
       print("%s = %s%s" % (path, cval, was))
     else:
