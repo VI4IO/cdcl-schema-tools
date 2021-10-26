@@ -30,18 +30,20 @@ def parse_full_val(val, schema_data):
   global units
   tmp = val
   if "unit" in schema_data and schema_data["unit"] != "":
-    tmp = val.split(" ")
+    tmp = re.split("([0-9.]+) *", tmp)
+    val_unit = ""
+    if len(tmp) > 2:
+      val_unit = tmp[2].strip()
+    tmp = tmp[1]
     if schema_data["dtype"] == "number":
-      print(tmp)
-      number = float(tmp[0])
+      number = float(tmp)
     elif schema_data["dtype"] == "integer":
-      number = int(tmp[0])
+      number = int(tmp)
     else:
       return None
-    if len(tmp) != 2:
-      print("The value %s requires a unit of type: %s" % (val, schema_data["unit"]))
-      return None
-    val_unit = tmp[1].strip()
+    #if len(tmp) != 2:
+    #  print("The value %s requires a unit of type: %s" % (val, schema_data["unit"]))
+    #  return None
     exp_unit = units[schema_data["unit"]]
     for (unit, multiplier) in exp_unit:
       if val_unit == unit:
@@ -142,7 +144,7 @@ def validate_path_value(schema, token, val):
   global value
   cur = token.pop(0).strip()
   type = cur
-
+  
   m = re.search("(.*)\[([0-9]+)\]", cur)
   if m:
     type = m.group(1)

@@ -33,6 +33,10 @@ def info(key, val, unit = ""):
   if val == None:
     warn("Couldn't find any information for key %s" % key)
     return
+  m = re.match("([0-9]+)K", val)
+  if m:
+    val = int(m.group(1))
+    unit = "KiB"  
   info_(cmd, key, val, unit)
 
 def infoNoReplace(key, val, unit = ""):
@@ -88,7 +92,8 @@ kv = {}
 with open("/etc/os-release") as f:
   for line in f:
     arr = line.split("=")
-    kv[arr[0].strip()] = arr[1].strip(" \n\t\"")
+    if len(arr) == 2:
+      kv[arr[0].strip()] = arr[1].strip(" \n\t\"")
 
 if "ID" in kv:
   val = kv["ID"]
