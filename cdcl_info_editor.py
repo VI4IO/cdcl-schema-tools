@@ -5,9 +5,9 @@ import re
 import os
 import subprocess
 
-# This tool allows to view and edit the options in an existing schema file.
+# This tool allows to view and edit the options in an existing __schema__ file.
 # In order to get started download the two files:
-# wget https://www.vi4io.org/lib/plugins/newcdcl/scripts/schema-io500.json
+# wget https://www.vi4io.org/lib/plugins/newcdcl/scripts/__schema__-io500.json
 # wget https://www.vi4io.org/lib/plugins/newcdcl/scripts/site-io500.json
 #
 # You can then copy the site-io500.json template file and modify it using this tool
@@ -27,7 +27,7 @@ def warn(str):
   print("WARNING: %s " % str)
 
 def parse_full_val(val, schema_data):
-  global units
+  global __units__
   tmp = val
   if "unit" in schema_data and schema_data["unit"] != "":
     tmp = re.split("([0-9.]+) *", tmp)
@@ -44,7 +44,7 @@ def parse_full_val(val, schema_data):
     #if len(tmp) != 2:
     #  print("The value %s requires a unit of type: %s" % (val, schema_data["unit"]))
     #  return None
-    exp_unit = units[schema_data["unit"]]
+    exp_unit = __units__[schema_data["unit"]]
     for (unit, multiplier) in exp_unit:
       if val_unit == unit:
         return [ number, val_unit ]
@@ -59,10 +59,10 @@ def parse_full_val(val, schema_data):
   else:
     return val
 
-def processDict(data, token, path, val, replace, usePrefix):
+def processDict(data, token, path, val, replace, usePrefix, resultdict):
   global value
   cur = token[0].strip()
-
+  
   if len(token) == 1:
     was = ""
     old = ""
@@ -90,14 +90,20 @@ def processDict(data, token, path, val, replace, usePrefix):
         cval = nval
     #if usePrefix:
     #  path = edit_infos + "-" + path
-    if cur in data["att"]:
-      print("%s = %s%s" % (path, cval, was))
+    if resultdict != None:
+      if cur in data["att"]:
+        resultdict[path] = cval
+      else:
+        resultdict[path] = None
     else:
-      print("%s = undefined" % path)
+      if cur in data["att"]:
+        print("%s = %s%s" % (path, cval, was))
+      else:
+        print("%s = undefined" % path)
   else:
-    processSingle(data["childs"], token, path, val, replace, usePrefix)
+    processSingle(data["childs"], token, path, val, replace, usePrefix, resultdict)
 
-def processSingle(data, token, path, val, replace, usePrefix):
+def processSingle(data, token, path, val, replace, usePrefix, resultdict=None):
   cur = token.pop(0)
   index = 0
   m = re.search("(.*)\[([0-9]+)\]", cur)
@@ -110,19 +116,19 @@ def processSingle(data, token, path, val, replace, usePrefix):
     for k in range(0, len(data)):
       if data[k]["type"] == cur:
         if index == 0:
-          processDict(data[k], token, path, val, replace, usePrefix)
+          processDict(data[k], token, path, val, replace, usePrefix, resultdict)
           return
         else:
           index = index - 1
     for k in range(0, index + 1):
       data.append({"type" : cur, "att" : {}, "childs" : [] })
-    processDict(data[len(data)-1], token, path, val, replace, usePrefix)
+    processDict(data[len(data)-1], token, path, val, replace, usePrefix, resultdict)
     return
   if data["type"] == cur:
-    processDict(data, token, path, val, replace, usePrefix)
+    processDict(data, token, path, val, replace, usePrefix, resultdict)
 
 def validate_in_template(templateNames, cur, token, val, multi = False):
-  global templates
+  global __templates__
   index = 0
   m = re.search("(.*)\[([0-9]+)\]", cur)
   if m:
@@ -138,11 +144,11 @@ def validate_in_template(templateNames, cur, token, val, multi = False):
       if index > 0 and not multi:
         print("The template %s does not support [X] notation" % cur)
         return None
-      return validate_path_value(templates[t], token, val)
+      return validate_path_value(__templates__[t], token, val)
   return None
 
-# Check if the schema supports the provided path token Site.XXX.YYY.ZZZ
-def validate_path_value(schema, token, val):
+# Check if the __schema__ supports the provided path token Site.XXX.YYY.ZZZ
+def validate_path_value(__schema__, token, val):
   global value
   cur = token.pop(0).strip()
   type = cur
@@ -151,28 +157,28 @@ def validate_path_value(schema, token, val):
   if m:
     type = m.group(1)
 
-  if type in schema:
+  if type in __schema__:
     if len(token) == 0:
       # Validate the correctness of the value
       if val:
-        schema = schema[cur]
-        value = parse_full_val(val, schema)
+        __schema__ = __schema__[cur]
+        value = parse_full_val(val, __schema__)
         return value != None
       return True;
     else:
-      return validate_path_value(schema[type], token, val)
+      return validate_path_value(__schema__[type], token, val)
 
-  if "SCHEMES" in schema:
-    ret = validate_in_template(schema["SCHEMES"], cur, token, val)
+  if "SCHEMES" in __schema__:
+    ret = validate_in_template(__schema__["SCHEMES"], cur, token, val)
     if ret != None:
       return ret
-  if "SCHEMES_multi" in schema:
-    ret = validate_in_template(schema["SCHEMES_multi"], cur, token, val, multi = True)
+  if "SCHEMES_multi" in __schema__:
+    ret = validate_in_template(__schema__["SCHEMES_multi"], cur, token, val, multi = True)
     if ret != None:
       return ret
   return False
 
-def process(data, schema, tokens, replace = True, usePrefix = None):
+def process(data, schema, tokens, replace = True, usePrefix = None, resultdict = None):
   global value
   for t in tokens:
     kv = t.split("=")
@@ -180,19 +186,19 @@ def process(data, schema, tokens, replace = True, usePrefix = None):
     val = kv[1].strip() if len(kv) == 2 else None
     value = None
     if validate_path_value(schema, list(token), val):
-      processSingle(data, token, kv[0].strip(), value, replace, usePrefix)
+      processSingle(data, token, kv[0].strip(), value, replace, usePrefix, resultdict=resultdict)
     else:
       print("Error: cannot validate path (or value): %s" % token)
 
 def edit_infos(sitefile, tokens, replace=True, schemafile = "schema-io500.json", printFile=True):
-  global units, templates, schema
+  global __units__, __templates__, __schema__
 
   check_requirements(sitefile, schemafile)
 
   with open(schemafile, 'r') as f:
-    schema = json.load(f)
-    templates = schema["SCHEMES"]
-    units = schema["UNITS"]
+    __schema__ = json.load(f)
+    __templates__ = __schema__["SCHEMES"]
+    __units__ = __schema__["UNITS"]
   
   if printFile:
     usePrefix = sitefile
@@ -201,11 +207,30 @@ def edit_infos(sitefile, tokens, replace=True, schemafile = "schema-io500.json",
 
   with open(sitefile, 'r+') as f:
       data = json.load(f)
-      process(data["DATA"], schema["SYSTEM"], tokens, replace=replace, usePrefix=usePrefix)
+      process(data["DATA"], __schema__["SYSTEM"], tokens, replace=replace, usePrefix=usePrefix)
 
       f.seek(0)
       json.dump(data, f, indent=2)
       f.truncate()
+
+__loaded__ = False
+
+"""This function returns a dictionary of all requested tokens"""
+def cdclgather(sitefile, tokens, schemafile = "schema-io500.json"):
+  global __units__, __templates__, __schema__, __loaded__
+  if not __loaded__:
+    __loaded__ = True
+    # load data
+    check_requirements(sitefile, schemafile)
+    with open(schemafile, 'r') as f:
+      __schema__ = json.load(f)
+      __templates__ = __schema__["SCHEMES"]
+      __units__ = __schema__["UNITS"]
+  result = {}
+  with open(sitefile, 'r+') as f:
+      data = json.load(f)
+      process(data["DATA"], __schema__["SYSTEM"], tokens, replace=False, resultdict=result)
+  return result
 
 def execute_download(url, outfile):
   import subprocess
@@ -219,12 +244,12 @@ def execute_download(url, outfile):
       sys.exit(1)
 
 
-def check_requirements(site, schema = "schema-io500.json"):
+def check_requirements(site, __schema__ = "__schema__-io500.json"):
   if not os.path.exists(site):
     print("Downloading new site specification")
     execute_download("https://www.vi4io.org/lib/plugins/newcdcl/scripts/site-io500.json", site)
-  if not os.path.exists(schema):
-    execute_download("https://www.vi4io.org/lib/plugins/newcdcl/scripts/schema-io500.json", schema)
+  if not os.path.exists(__schema__):
+    execute_download("https://www.vi4io.org/lib/plugins/newcdcl/scripts/schema-io500.json", __schema__)
 
 
 value = None # currently parsed value
